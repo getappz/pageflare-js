@@ -34,8 +34,10 @@
 			"types": "./dist/netlify.d.ts"
 		}
 	},
+	"main": "./dist/netlify.js",
 	"files": [
-		"dist/"
+		"dist/",
+		"manifest.yml"
 	],
 	"engines": {
 		"node": ">=20"

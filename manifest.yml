@@ -1,0 +1,6 @@
+name: pageflare
+inputs:
+  - name: args
+    description: Extra arguments passed to `pageflare optimize` (e.g. "--force --platform netlify")
+    required: false
+    default: ""
