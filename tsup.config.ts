@@ -14,5 +14,13 @@ export default defineConfig({
 	splitting: true,
 	dts: true,
 	clean: true,
-	external: ["vite", "astro", "@nuxt/kit", "next"],
+	external: [
+		"vite",
+		"astro",
+		"@nuxt/kit",
+		"@nuxt/schema",
+		"nitropack",
+		"nitro",
+		"next",
+	],
 });

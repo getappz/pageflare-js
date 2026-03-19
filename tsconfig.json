@@ -8,7 +8,10 @@
 		"noEmit": true,
 		"esModuleInterop": true,
 		"declaration": true,
-		"lib": ["ES2022"]
+		"lib": ["ES2022"],
+		"paths": {
+			"@nuxt/schema": ["./node_modules/@nuxt/schema"]
+		}
 	},
 	"include": ["src/**/*"]
 }
