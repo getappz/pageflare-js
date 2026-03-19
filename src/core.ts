@@ -1,5 +1,5 @@
 import { execSync, spawn } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -24,53 +24,14 @@ export interface PageflarePluginOptions {
 	log?: OptimizeOptions["log"];
 }
 
-// ── Platform map ───────────────────────────────────────────────────
-
-const PLATFORMS: Record<string, string> = {
-	"linux-x64-glibc": "@pageflare/cli-linux-x64",
-	"linux-x64-musl": "@pageflare/cli-linux-x64-musl",
-	"linux-arm64-glibc": "@pageflare/cli-linux-arm64",
-	"linux-arm64-musl": "@pageflare/cli-linux-arm64-musl",
-	"darwin-x64": "@pageflare/cli-darwin-x64",
-	"darwin-arm64": "@pageflare/cli-darwin-arm64",
-	"win32-x64": "@pageflare/cli-win32-x64",
-};
-
-// ── Libc detection (Linux only) ────────────────────────────────────
-
-function detectLibc(): string {
-	if (process.platform !== "linux") return "";
-	try {
-		const libs = readdirSync("/lib");
-		if (libs.some((f) => f.startsWith("ld-musl-"))) return "musl";
-	} catch {}
-	try {
-		const out = execSync("ldd --version 2>&1", { encoding: "utf8" });
-		if (out.toLowerCase().includes("musl")) return "musl";
-	} catch {}
-	return "glibc";
-}
-
 // ── Binary resolution ──────────────────────────────────────────────
 
-function getPlatformKey(): string {
-	const { platform, arch } = process;
-	return platform === "linux"
-		? `${platform}-${arch}-${detectLibc()}`
-		: `${platform}-${arch}`;
-}
-
-function resolveFromNodeModules(): string | null {
-	const key = getPlatformKey();
-	const pkg = PLATFORMS[key];
-	if (!pkg) return null;
-
-	const binaryName =
-		process.platform === "win32" ? "pageflare.exe" : "pageflare";
+function resolveFromCli(): string | null {
 	try {
 		const require = createRequire(import.meta.url);
-		const pkgDir = require.resolve(`${pkg}/package.json`);
-		const binPath = join(pkgDir, "..", "bin", binaryName);
+		// @pageflare/cli is a direct dependency — resolve its bin entry
+		const cliPkg = require.resolve("@pageflare/cli/package.json");
+		const binPath = join(cliPkg, "..", "bin", "cli.js");
 		if (existsSync(binPath)) return binPath;
 	} catch {}
 	return null;
@@ -90,38 +51,12 @@ function resolveFromPath(): string | null {
 	return null;
 }
 
-async function downloadBinary(): Promise<void> {
-	return new Promise<void>((resolve, reject) => {
-		const isWindows = process.platform === "win32";
-		const cmd = isWindows ? "powershell" : "sh";
-		const args = isWindows
-			? ["-Command", "irm https://get.appz.dev/pageflare/install.ps1 | iex"]
-			: ["-c", "curl -fsSL https://get.appz.dev/pageflare/install.sh | sh"];
-
-		const child = spawn(cmd, args, { stdio: "inherit" });
-		child.on("close", (code) => {
-			if (code === 0) resolve();
-			else
-				reject(
-					new Error(
-						`Failed to download pageflare binary (exit code ${code}).\n` +
-							"Install manually:\n" +
-							"  npm install @pageflare/cli\n" +
-							"  # or\n" +
-							"  curl -fsSL https://get.appz.dev/pageflare/install.sh | sh",
-					),
-				);
-		});
-		child.on("error", (err) => reject(err));
-	});
-}
-
 export async function resolveBinary(): Promise<string> {
-	// 1. npm optional deps
-	const npmBin = resolveFromNodeModules();
-	if (npmBin) return npmBin;
+	// 1. @pageflare/cli (direct dependency — handles platform binary internally)
+	const cliBin = resolveFromCli();
+	if (cliBin) return cliBin;
 
-	// 2. Cached install
+	// 2. Cached install (~/.pageflare/bin/)
 	const cached = resolveCached();
 	if (cached) return cached;
 
@@ -129,13 +64,8 @@ export async function resolveBinary(): Promise<string> {
 	const pathBin = resolveFromPath();
 	if (pathBin) return pathBin;
 
-	// 4. Auto-download
-	await downloadBinary();
-	const downloaded = resolveCached();
-	if (downloaded) return downloaded;
-
 	throw new Error(
-		"Could not find or install pageflare binary.\n" +
+		"Could not find pageflare binary.\n" +
 			"Install manually:\n" +
 			"  npm install @pageflare/cli\n" +
 			"  # or\n" +

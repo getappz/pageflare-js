@@ -1,6 +1,6 @@
 {
 	"name": "pageflare",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Framework integrations for Pageflare static site optimization",
 	"type": "module",
 	"license": "MIT",
@@ -66,14 +66,8 @@
 			"optional": true
 		}
 	},
-	"optionalDependencies": {
-		"@pageflare/cli-darwin-arm64": "^0.4.0",
-		"@pageflare/cli-darwin-x64": "^0.4.0",
-		"@pageflare/cli-linux-arm64": "^0.4.0",
-		"@pageflare/cli-linux-arm64-musl": "^0.4.0",
-		"@pageflare/cli-linux-x64": "^0.4.0",
-		"@pageflare/cli-linux-x64-musl": "^0.4.0",
-		"@pageflare/cli-win32-x64": "^0.4.0"
+	"dependencies": {
+		"@pageflare/cli": "^0.4.0"
 	},
 	"devDependencies": {
 		"@nuxt/kit": "^3.0.0",
