@@ -1,0 +1,89 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the sections below so we can reproduce and fix it.
+
+  - type: input
+    id: version
+    attributes:
+      label: Pageflare version
+      description: Run `npm list pageflare` to get this
+      placeholder: "1.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework integration
+      options:
+        - Vite (pageflare/vite)
+        - Astro (pageflare/astro)
+        - Nuxt (pageflare/nuxt)
+        - Next.js (pageflare/next)
+        - Netlify (pageflare/netlify)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Deployment platform
+      options:
+        - Vercel
+        - Netlify
+        - Cloudflare Pages
+        - None / self-hosted
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. Include what you expected vs what actually happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the issue
+      placeholder: |
+        1. Add `pageflare/vite` to vite.config.ts
+        2. Run `npm run build`
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Paste your framework config and `pageflare.jsonc` if relevant (remove any sensitive values)
+      render: ts
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node.js version, framework version, and any other relevant details
+      placeholder: |
+        - OS: macOS 14.3 / Ubuntu 22.04 / Windows 11
+        - Node.js: 22.x
+        - Framework: Vite 6 / Astro 5 / Nuxt 3 / Next.js 15
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant build output
+      render: shell

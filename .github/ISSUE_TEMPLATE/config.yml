@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://pageflare.dev/docs
+    about: Check the docs before filing — your question might already be answered
+  - name: Free Site Audit
+    url: https://pageflare.dev/audit
+    about: Run a free PageSpeed audit to see what pageflare can optimize

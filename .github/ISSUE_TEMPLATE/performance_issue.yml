@@ -1,0 +1,70 @@
+name: Performance Issue
+description: Report a PageSpeed regression or unexpected Lighthouse result after optimization
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If pageflare isn't improving your scores as expected, or is causing a regression, please share the details below.
+
+  - type: input
+    id: version
+    attributes:
+      label: Pageflare version
+      placeholder: "1.0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework integration
+      options:
+        - Vite (pageflare/vite)
+        - Astro (pageflare/astro)
+        - Nuxt (pageflare/nuxt)
+        - Next.js (pageflare/next)
+        - Netlify (pageflare/netlify)
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: URL (if public)
+      description: The optimized page URL so we can run our own audit
+      placeholder: "https://example.com"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What's the issue?
+      description: Describe the performance problem — include before/after scores if available
+      placeholder: |
+        Before pageflare: Performance 72, LCP 3.2s
+        After pageflare: Performance 68, LCP 3.8s (regression)
+    validations:
+      required: true
+
+  - type: textarea
+    id: lighthouse
+    attributes:
+      label: Lighthouse diagnostics
+      description: Paste the relevant Lighthouse diagnostics or opportunities
+      render: text
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Paste your `pageflare.jsonc` if relevant
+      render: json
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - Framework: Vite 6 / Astro 5 / Nuxt 3 / Next.js 15
+        - Platform: Vercel / Netlify / self-hosted
+        - Site size: ~200 pages
