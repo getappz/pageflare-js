@@ -7,10 +7,10 @@
 	"homepage": "https://pageflare.dev",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/getappz/pageflare-cli"
+		"url": "https://github.com/getappz/pageflare-js"
 	},
 	"bugs": {
-		"url": "https://github.com/getappz/pageflare-cli/issues"
+		"url": "https://github.com/getappz/pageflare-js/issues"
 	},
 	"exports": {
 		"./vite": {
@@ -37,7 +37,9 @@
 	"main": "./dist/netlify.js",
 	"files": [
 		"dist/",
-		"manifest.yml"
+		"manifest.yml",
+		"LICENSE",
+		"README.md"
 	],
 	"engines": {
 		"node": ">=20"
