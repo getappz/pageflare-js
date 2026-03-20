@@ -1,8 +1,14 @@
 import { execSync, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -16,12 +22,100 @@ export interface OptimizeOptions {
 	json?: boolean;
 	log?: "off" | "error" | "warn" | "info" | "debug";
 	args?: string[];
+	configOverrides?: Record<string, unknown>;
 }
 
 export interface PageflarePluginOptions {
 	platform?: OptimizeOptions["platform"];
 	args?: string[];
 	log?: OptimizeOptions["log"];
+	configOverrides?: Record<string, unknown>;
+}
+
+// ── JSONC / config helpers ─────────────────────────────────────────
+
+/**
+ * Strip JSONC comments (// and /* ... *\/) while preserving
+ * comment-like content inside quoted strings.
+ */
+function stripJsoncComments(text: string): string {
+	let result = "";
+	let i = 0;
+	while (i < text.length) {
+		// Quoted string — copy verbatim
+		if (text[i] === '"') {
+			result += '"';
+			i++;
+			while (i < text.length) {
+				if (text[i] === "\\" && i + 1 < text.length) {
+					result += text[i] + text[i + 1];
+					i += 2;
+				} else if (text[i] === '"') {
+					result += '"';
+					i++;
+					break;
+				} else {
+					result += text[i];
+					i++;
+				}
+			}
+		} else if (i + 1 < text.length && text[i] === "/" && text[i + 1] === "/") {
+			// Single-line comment — skip to end of line
+			while (i < text.length && text[i] !== "\n") i++;
+		} else if (i + 1 < text.length && text[i] === "/" && text[i + 1] === "*") {
+			// Multi-line comment — skip to closing */
+			i += 2;
+			while (i + 1 < text.length && !(text[i] === "*" && text[i + 1] === "/"))
+				i++;
+			if (i + 1 < text.length) i += 2;
+		} else {
+			result += text[i];
+			i++;
+		}
+	}
+	return result;
+}
+
+function resolveUserConfig(
+	inputDir: string,
+	explicitConfig?: string,
+): string | null {
+	if (explicitConfig) {
+		return existsSync(explicitConfig) ? explicitConfig : null;
+	}
+	let dir = resolve(inputDir);
+	for (let i = 0; i < 4; i++) {
+		const candidate = join(dir, "pageflare.jsonc");
+		if (existsSync(candidate)) return candidate;
+		const parent = resolve(dir, "..");
+		if (parent === dir) break;
+		dir = parent;
+	}
+	return null;
+}
+
+function mergeConfigOverrides(
+	inputDir: string,
+	explicitConfig: string | undefined,
+	overrides: Record<string, unknown>,
+): string {
+	const userConfigPath = resolveUserConfig(inputDir, explicitConfig);
+	let base: Record<string, unknown> = {};
+	if (userConfigPath) {
+		try {
+			const raw = readFileSync(userConfigPath, "utf8");
+			base = JSON.parse(stripJsoncComments(raw));
+		} catch (err) {
+			console.warn(
+				`[pageflare] Failed to parse ${userConfigPath}, using defaults: ${err instanceof Error ? err.message : err}`,
+			);
+		}
+	}
+	const merged = { ...base, ...overrides };
+	const tmpDir = mkdtempSync(join(tmpdir(), "pageflare-"));
+	const tmpConfig = join(tmpDir, "pageflare.jsonc");
+	writeFileSync(tmpConfig, JSON.stringify(merged, null, 2));
+	return tmpConfig;
 }
 
 // ── Binary resolution ──────────────────────────────────────────────
@@ -78,6 +172,19 @@ export async function resolveBinary(): Promise<string> {
 export async function optimize(options: OptimizeOptions): Promise<void> {
 	const binary = await resolveBinary();
 
+	let tmpConfigPath: string | undefined;
+	if (
+		options.configOverrides &&
+		Object.keys(options.configOverrides).length > 0
+	) {
+		tmpConfigPath = mergeConfigOverrides(
+			options.inputDir,
+			options.config,
+			options.configOverrides,
+		);
+		options.config = tmpConfigPath;
+	}
+
 	const args: string[] = [options.inputDir];
 
 	if (options.inPlace !== false) args.push("--in-place");
@@ -89,12 +196,24 @@ export async function optimize(options: OptimizeOptions): Promise<void> {
 	if (options.log) args.push("--log", options.log);
 	if (options.args) args.push(...options.args);
 
+	const cleanup = () => {
+		if (tmpConfigPath) {
+			try {
+				rmSync(resolve(tmpConfigPath, ".."), { recursive: true, force: true });
+			} catch {}
+		}
+	};
+
 	return new Promise<void>((resolve, reject) => {
 		const child = spawn(binary, args, { stdio: "inherit" });
 		child.on("close", (code) => {
+			cleanup();
 			if (code === 0) resolve();
 			else reject(new Error(`pageflare exited with code ${code}`));
 		});
-		child.on("error", (err) => reject(err));
+		child.on("error", (err) => {
+			cleanup();
+			reject(err);
+		});
 	});
 }
