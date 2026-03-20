@@ -37,6 +37,7 @@ export async function optimizeNextExport(
 		platform: options?.platform,
 		log: options?.log,
 		args: options?.args,
+		configOverrides: options?.configOverrides,
 	});
 }
 

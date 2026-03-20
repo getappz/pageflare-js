@@ -18,6 +18,7 @@ export default function pageflare(options?: PageflarePluginOptions): Plugin {
 				platform: options?.platform,
 				log: options?.log,
 				args: options?.args,
+				configOverrides: options?.configOverrides,
 			});
 		},
 	};
