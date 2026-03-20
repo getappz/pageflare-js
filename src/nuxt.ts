@@ -1,6 +1,22 @@
 import { defineNuxtModule } from "@nuxt/kit";
 import { optimize, type PageflarePluginOptions } from "./core.js";
 
+interface ConflictEntry {
+	keys: Record<string, false>;
+	description: string;
+}
+
+const CONFLICT_MAP: Record<string, ConflictEntry> = {
+	"@nuxtjs/critters": {
+		keys: { critical_css: false },
+		description: "critical CSS inlining",
+	},
+	"nuxt-critters": {
+		keys: { critical_css: false },
+		description: "critical CSS inlining",
+	},
+};
+
 export default defineNuxtModule<PageflarePluginOptions>({
 	meta: {
 		name: "pageflare",
@@ -8,6 +24,27 @@ export default defineNuxtModule<PageflarePluginOptions>({
 	},
 	defaults: {},
 	setup(options, nuxt) {
+		const configOverrides: Record<string, unknown> = {
+			...options?.configOverrides,
+		};
+
+		// Detect conflicting modules
+		const moduleNames = (nuxt.options.modules || [])
+			.map((m) => (typeof m === "string" ? m : Array.isArray(m) ? m[0] : ""))
+			.filter(Boolean);
+
+		for (const [name, conflict] of Object.entries(CONFLICT_MAP)) {
+			if (moduleNames.includes(name)) {
+				const skippedKeys = Object.keys(conflict.keys).join(", ");
+				console.warn(
+					`[pageflare] Detected "${name}" which already handles ${conflict.description}. ` +
+						`Pageflare will skip: ${skippedKeys}. ` +
+						`You can remove "${name}" to let Pageflare handle this instead.`,
+				);
+				Object.assign(configOverrides, conflict.keys);
+			}
+		}
+
 		// biome-ignore lint/suspicious/noExplicitAny: Nitro types reference @nuxt/schema which isn't portable for DTS
 		nuxt.hook("nitro:init", (nitro: any) => {
 			nitro.hooks.hook("close", async () => {
@@ -18,7 +55,10 @@ export default defineNuxtModule<PageflarePluginOptions>({
 					platform: options?.platform,
 					log: options?.log,
 					args: options?.args,
-					configOverrides: options?.configOverrides,
+					configOverrides:
+						Object.keys(configOverrides).length > 0
+							? configOverrides
+							: undefined,
 				});
 			});
 		});
