@@ -45,7 +45,6 @@ export default defineNuxtModule<PageflarePluginOptions>({
 			}
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: Nitro types reference @nuxt/schema which isn't portable for DTS
 		nuxt.hook("nitro:init", (nitro: any) => {
 			nitro.hooks.hook("close", async () => {
 				const outputDir = nitro.options.output.publicDir;
