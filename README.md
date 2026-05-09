@@ -106,7 +106,7 @@ pageflare({
 
 ## How It Works
 
-This package depends on `@pageflare/cli`, which installs the platform-specific pageflare binary. Each integration hooks into the framework's post-build lifecycle and runs `pageflare <outputDir> --in-place` to optimize HTML, CSS, JS, images, and fonts.
+This package depends on `@pageflare/cli`, which installs the platform-specific pageflare binary. Each integration hooks into the framework's post-build lifecycle and runs `pageflare <outputDir> --output <outputDir>` to optimize HTML, CSS, JS, images, and fonts in place. Pass `inPlace: false` if you'd rather have pageflare write to its default `<outputDir>/.appz/output/static/` instead.
 
 Pageflare 0.9+ uses a real browser (Chrome via Lightpanda) to extract above-fold critical CSS, hero/LCP preload candidates, font preloads, and below-fold lazy-render boundaries — replacing string-scanning heuristics with layout-aware decisions. CI environments without Chrome can opt out with `args: ['--no-browser']` to fall back to the heuristic path.
 

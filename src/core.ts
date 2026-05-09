@@ -187,8 +187,15 @@ export async function optimize(options: OptimizeOptions): Promise<void> {
 
 	const args: string[] = [options.inputDir];
 
-	if (options.inPlace !== false) args.push("--in-place");
-	if (options.output) args.push("--output", options.output);
+	// CLI no longer has an --in-place flag — passing the same path for
+	// --output overwrites files in the build directory, which is what
+	// framework integrations want by default. Explicit options.output
+	// always wins.
+	if (options.output) {
+		args.push("--output", options.output);
+	} else if (options.inPlace !== false) {
+		args.push("--output", options.inputDir);
+	}
 	if (options.platform) args.push("--platform", options.platform);
 	if (options.config) args.push("--config", options.config);
 	if (options.force) args.push("--force");
