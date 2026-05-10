@@ -23,6 +23,25 @@ export interface OptimizeOptions {
 	log?: "off" | "error" | "warn" | "info" | "debug";
 	args?: string[];
 	configOverrides?: Record<string, unknown>;
+
+	// --- v0.9 CLI surface -------------------------------------------
+
+	/** Wipe the output directory before writing. Refuses when output equals input. */
+	cleanOutput?: boolean;
+	/** Production build — enables platform CDN image rewrites. */
+	prod?: boolean;
+	/** Force the heuristic fallback path (no browser-driven extraction). */
+	noBrowser?: boolean;
+	/** Generate sitemap.xml, robots.txt, llms.txt, .well-known agent/MCP cards, etc. */
+	withGeo?: boolean;
+	/** Inject viewport / charset / canonical / basic OG tags into HTML when missing. */
+	withSeo?: boolean;
+	/** Run audit checks during the build, emit audit.json. */
+	withAudit?: boolean;
+	/** Run PWA build (manifest, service worker, icons) after the main pipeline. */
+	withPwa?: boolean;
+	/** Exit non-zero on internal 404 references. */
+	failOnBrokenRefs?: boolean;
 }
 
 export interface PageflarePluginOptions {
@@ -30,6 +49,40 @@ export interface PageflarePluginOptions {
 	args?: string[];
 	log?: OptimizeOptions["log"];
 	configOverrides?: Record<string, unknown>;
+
+	// --- v0.9 CLI surface, exposed to framework users ---------------
+	cleanOutput?: OptimizeOptions["cleanOutput"];
+	prod?: OptimizeOptions["prod"];
+	noBrowser?: OptimizeOptions["noBrowser"];
+	withGeo?: OptimizeOptions["withGeo"];
+	withSeo?: OptimizeOptions["withSeo"];
+	withAudit?: OptimizeOptions["withAudit"];
+	withPwa?: OptimizeOptions["withPwa"];
+	failOnBrokenRefs?: OptimizeOptions["failOnBrokenRefs"];
+}
+
+/**
+ * Map plugin options (the user-facing shape framework integrations expose) to
+ * the subset of OptimizeOptions accepted by `optimize()`. Keeps the per-
+ * integration adapters (vite/nuxt/astro/next/netlify) DRY — they each spread
+ * the result and add their own `inputDir`, `inPlace`, `configOverrides`.
+ */
+export function pluginOptionsToOptimize(
+	opts: PageflarePluginOptions | undefined,
+): Omit<OptimizeOptions, "inputDir"> {
+	return {
+		platform: opts?.platform,
+		log: opts?.log,
+		args: opts?.args,
+		cleanOutput: opts?.cleanOutput,
+		prod: opts?.prod,
+		noBrowser: opts?.noBrowser,
+		withGeo: opts?.withGeo,
+		withSeo: opts?.withSeo,
+		withAudit: opts?.withAudit,
+		withPwa: opts?.withPwa,
+		failOnBrokenRefs: opts?.failOnBrokenRefs,
+	};
 }
 
 // ── JSONC / config helpers ─────────────────────────────────────────
@@ -200,6 +253,14 @@ export async function optimize(options: OptimizeOptions): Promise<void> {
 	if (options.config) args.push("--config", options.config);
 	if (options.force) args.push("--force");
 	if (options.json) args.push("--json");
+	if (options.cleanOutput) args.push("--clean-output");
+	if (options.prod) args.push("--prod");
+	if (options.noBrowser) args.push("--no-browser");
+	if (options.withGeo) args.push("--with-geo");
+	if (options.withSeo) args.push("--with-seo");
+	if (options.withAudit) args.push("--with-audit");
+	if (options.withPwa) args.push("--with-pwa");
+	if (options.failOnBrokenRefs) args.push("--fail-on-broken-refs");
 	if (options.log) args.push("--log", options.log);
 	if (options.args) args.push(...options.args);
 

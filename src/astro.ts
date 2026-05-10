@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
-import { optimize, type PageflarePluginOptions } from "./core.js";
+import {
+	optimize,
+	type PageflarePluginOptions,
+	pluginOptionsToOptimize,
+} from "./core.js";
 
 interface ConflictEntry {
 	keys: Record<string, false>;
@@ -55,9 +59,7 @@ export default function pageflare(
 				await optimize({
 					inputDir: fileURLToPath(dir),
 					inPlace: true,
-					platform: options?.platform,
-					log: options?.log,
-					args: options?.args,
+					...pluginOptionsToOptimize(options),
 					configOverrides:
 						Object.keys(configOverrides).length > 0
 							? configOverrides

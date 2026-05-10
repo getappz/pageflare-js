@@ -1,6 +1,10 @@
 import { resolve } from "node:path";
 import type { NextConfig } from "next";
-import { optimize, type PageflarePluginOptions } from "./core.js";
+import {
+	optimize,
+	type PageflarePluginOptions,
+	pluginOptionsToOptimize,
+} from "./core.js";
 
 /**
  * Config wrapper that validates Next.js is in export mode.
@@ -34,9 +38,7 @@ export async function optimizeNextExport(
 	await optimize({
 		inputDir: outputDir,
 		inPlace: true,
-		platform: options?.platform,
-		log: options?.log,
-		args: options?.args,
+		...pluginOptionsToOptimize(options),
 		configOverrides: options?.configOverrides,
 	});
 }

@@ -1,6 +1,10 @@
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
-import { optimize, type PageflarePluginOptions } from "./core.js";
+import {
+	optimize,
+	type PageflarePluginOptions,
+	pluginOptionsToOptimize,
+} from "./core.js";
 
 interface ConflictEntry {
 	keys: Record<string, false>;
@@ -47,9 +51,7 @@ export default function pageflare(options?: PageflarePluginOptions): Plugin {
 			await optimize({
 				inputDir: outputDir,
 				inPlace: true,
-				platform: options?.platform,
-				log: options?.log,
-				args: options?.args,
+				...pluginOptionsToOptimize(options),
 				configOverrides:
 					Object.keys(configOverrides).length > 0 ? configOverrides : undefined,
 			});

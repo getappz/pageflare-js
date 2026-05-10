@@ -98,17 +98,35 @@ All integrations accept the same options:
 
 ```ts
 pageflare({
-  platform: 'auto',    // 'auto' | 'vercel' | 'netlify' | 'cloudflare-pages' | 'none'
-  log: 'warn',         // 'off' | 'error' | 'warn' | 'info' | 'debug'
-  args: ['--force'],   // extra CLI flags
+  // Pipeline
+  platform: 'auto',          // 'auto' | 'vercel' | 'netlify' | 'cloudflare-pages' | 'none'
+  prod: true,                // Production build — enables platform CDN image rewrites
+  cleanOutput: true,         // Wipe output dir before writing (refuses if equal to input)
+  noBrowser: true,           // Force heuristic fallback (no real-browser extraction)
+  failOnBrokenRefs: true,    // Exit non-zero on internal 404 references
+
+  // Build-time SEO/GEO/Audit/PWA opt-ins (idempotent, off by default)
+  withGeo: true,             // sitemap.xml, robots.txt, llms.txt, .well-known/*
+  withSeo: true,             // viewport / charset / canonical / OG meta
+  withAudit: true,           // emit audit.json
+  withPwa: true,             // manifest, service worker, icons (reads pageflare.pwa.jsonc)
+
+  // Diagnostics + escape hatch
+  log: 'warn',               // 'off' | 'error' | 'warn' | 'info' | 'debug'
+  args: ['--force'],         // extra CLI flags passed verbatim
+  configOverrides: {         // override pageflare.jsonc fields per-build
+    'image.format': 'avif',
+  },
 })
 ```
+
+Each option maps 1:1 to the underlying CLI flag (`cleanOutput → --clean-output`, `withGeo → --with-geo`, etc.) — see the [CLI reference](https://www.npmjs.com/package/@pageflare/cli) for what each one does.
 
 ## How It Works
 
 This package depends on `@pageflare/cli`, which installs the platform-specific pageflare binary. Each integration hooks into the framework's post-build lifecycle and runs `pageflare <outputDir> --output <outputDir>` to optimize HTML, CSS, JS, images, and fonts in place. Pass `inPlace: false` if you'd rather have pageflare write to its default `<outputDir>/.appz/output/static/` instead.
 
-Pageflare 0.9+ uses a real browser (Chrome via Lightpanda) to extract above-fold critical CSS, hero/LCP preload candidates, font preloads, and below-fold lazy-render boundaries — replacing string-scanning heuristics with layout-aware decisions. CI environments without Chrome can opt out with `args: ['--no-browser']` to fall back to the heuristic path.
+Pageflare 0.9+ uses a real browser (Chrome via Lightpanda) to extract above-fold critical CSS, hero/LCP preload candidates, font preloads, and below-fold lazy-render boundaries — replacing string-scanning heuristics with layout-aware decisions. CI environments without Chrome can opt out with `noBrowser: true` (or `args: ['--no-browser']`) to fall back to the heuristic path.
 
 ## Documentation
 

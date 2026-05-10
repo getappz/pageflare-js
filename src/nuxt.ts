@@ -1,5 +1,9 @@
 import { defineNuxtModule } from "@nuxt/kit";
-import { optimize, type PageflarePluginOptions } from "./core.js";
+import {
+	optimize,
+	type PageflarePluginOptions,
+	pluginOptionsToOptimize,
+} from "./core.js";
 
 interface ConflictEntry {
 	keys: Record<string, false>;
@@ -51,9 +55,7 @@ export default defineNuxtModule<PageflarePluginOptions>({
 				await optimize({
 					inputDir: outputDir,
 					inPlace: true,
-					platform: options?.platform,
-					log: options?.log,
-					args: options?.args,
+					...pluginOptionsToOptimize(options),
 					configOverrides:
 						Object.keys(configOverrides).length > 0
 							? configOverrides
